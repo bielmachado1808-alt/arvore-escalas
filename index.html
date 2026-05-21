@@ -762,7 +762,7 @@ const initials=n=>(n||'').split(' ').filter(x=>x).slice(0,2).map(w=>w[0]).join('
 const today=new Date();
 const todayStr=today.toISOString().split('T')[0];
 const ymd=d=>d.toISOString().split('T')[0];
-const dateFromYmd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const dateFromYmd=s=>{if(!s||typeof s!=='string')return new Date();const[y,m,d]=s.split('-').map(Number);return(isNaN(y)||isNaN(m)||isNaN(d))?new Date():new Date(y,m-1,d)};
 const fmtDate=ymdStr=>{const d=dateFromYmd(ymdStr);return`${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`};
 const fmtFullDate=ymdStr=>{const d=dateFromYmd(ymdStr);return`${DAYS[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]}`};
 const daysUntil=ymdStr=>{const t=new Date(todayStr).getTime(),d=new Date(ymdStr).getTime();return Math.round((d-t)/86400000)};
@@ -871,7 +871,7 @@ function autoAddMember(name,role){
     if(exists.role==='Voluntário'&&role&&role!=='Voluntário')exists.role=role;
     return exists;
   }
-  const m={id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:n,role:role||'Voluntário',bday:null};
+  const m={id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:n,role:role||'Voluntário',bday:null,phone:null};
   S.members.push(m);
   return m;
 }
@@ -1002,10 +1002,10 @@ function renderCentral(){
           ${counts[z.kind]?`<span class="cent-bdg">${counts[z.kind]}</span>`:''}
         </div>`).join('')}
     </div>
-    <input type="file" id="cinp-sch" accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'sch')">
-    <input type="file" id="cinp-eq"  accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'eq')">
-    <input type="file" id="cinp-tm"  accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'tm')">
-    <input type="file" id="cinp-ct"  accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'ct')">
+    <input type="file" id="cinp-sch" accept="image/*" hidden onchange="onFileCentral(event,'sch')">
+    <input type="file" id="cinp-eq"  accept="image/*" hidden onchange="onFileCentral(event,'eq')">
+    <input type="file" id="cinp-tm"  accept="image/*" hidden onchange="onFileCentral(event,'tm')">
+    <input type="file" id="cinp-ct"  accept="image/*" hidden onchange="onFileCentral(event,'ct')">
     ${log.length?`<div class="card"><div class="card-ti"><h3 style="font-size:15px;color:var(--ink-m)">📋 Importações recentes</h3></div>
       <div class="cent-log">${log.map(l=>`
         <div class="cent-log-it ${l.kind}">
@@ -1073,7 +1073,20 @@ function _doneZone(kind,msg){
   const z=document.getElementById('cz-'+kind);
   if(z)z.classList.add('done');
   notify(msg,'ok');
-  setTimeout(()=>renderCentral(),900);
+  setTimeout(()=>{
+    const sec=document.getElementById('sec-central');
+    if(sec&&sec.style.display!=='none')renderCentral();
+  },900);
+}
+
+function _celFromParsed(c){
+  return{
+    id:'cel-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    name:c.name,type:c.type,emoji:c.emoji||EMOJIS[c.type]||'⛪',
+    date:c.date,time:c.time,loc:c.loc||'',notes:c.notes||'',
+    team:c.team.map(t=>({id:Date.now()+Math.random(),name:t.name,role:t.role,ok:false})),
+    checklist:[]
+  };
 }
 
 function autoSaveSchedule(raw){
@@ -1081,11 +1094,12 @@ function autoSaveSchedule(raw){
   if(!cels.length){notify('Nenhum culto identificado. Tente foto mais nítida.','wn');return}
   let n=0;
   cels.forEach(c=>{
-    S.celebrations.push({...c,id:'cel-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),checklist:[]});
-    c.team.forEach(t=>autoAddMember(t.name,t.role));n++;
+    S.celebrations.push(_celFromParsed(c));
+    c.team.forEach(t=>autoAddMember(t.name,t.role));
+    n++;
   });
   _logImport('sch',`${n} culto(s) — "${cels[0].name}"${n>1?' e mais':''}`);
-  save();_doneZone('sch',`✅ ${n} culto(s) salvos!`);
+  save();_doneZone('sch',`✅ ${n} culto(s) salvos automaticamente!`);
 }
 
 function autoSaveEquipes(raw){
@@ -1094,18 +1108,23 @@ function autoSaveEquipes(raw){
   let merged=0,created=0;
   cels.forEach(c=>{
     if(!c.team.length)return;
-    const ex=S.celebrations.find(x=>x.date===c.date&&(
-      x.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])||
-      c.name.toLowerCase().includes(x.name.toLowerCase().split(' ')[0])
-    ));
+    const nameKey=c.name.toLowerCase().split(' ')[0];
+    const ex=S.celebrations.find(x=>{
+      if(x.date!==c.date)return false;
+      const xk=x.name.toLowerCase();
+      return xk.includes(nameKey)||c.name.toLowerCase().includes(xk.split(' ')[0]);
+    });
     if(ex){
       c.team.forEach(t=>{
-        if(!ex.team.find(et=>et.name.toLowerCase()===t.name.toLowerCase()))ex.team.push(t);
+        if(!ex.team.find(et=>et.name.toLowerCase()===t.name.toLowerCase()))
+          ex.team.push({id:Date.now()+Math.random(),name:t.name,role:t.role,ok:false});
         autoAddMember(t.name,t.role);
-      });merged++;
+      });
+      merged++;
     }else{
-      S.celebrations.push({...c,id:'cel-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),checklist:[]});
-      c.team.forEach(t=>autoAddMember(t.name,t.role));created++;
+      S.celebrations.push(_celFromParsed(c));
+      c.team.forEach(t=>autoAddMember(t.name,t.role));
+      created++;
     }
   });
   const tot=merged+created;
@@ -1123,7 +1142,7 @@ function autoSaveTeam(raw){
     S.members.push({id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:m.name,role:m.role||'Voluntário',bday:null,phone:null});
     added++;
   });
-  _logImport('tm',`${added} discípulo(s) adicionado(s)${skip?` (${skip} já existia${skip>1?'m':''})`:''}`);
+  _logImport('tm',`${added} novo(s)${skip?`, ${skip} já existia${skip>1?'m':''}`:''} discípulo(s)`);
   save();_doneZone('tm',`✅ ${added} discípulo(s) salvos!`);
 }
 
@@ -1808,6 +1827,7 @@ function changeBdayMonth(delta){
 function updateBdayBadge(){
   const t=getBirthdaysFor(todayStr).length;
   const bdg=document.getElementById('bd-bdg');
+  if(!bdg)return;
   if(t){bdg.style.display='';bdg.textContent=t}else bdg.style.display='none';
 }
 
@@ -1915,6 +1935,7 @@ function clearMsgs(){
 function updateMsgBadge(){
   const unread=S.messages.filter(m=>!m.read).length;
   const bdg=document.getElementById('msg-bdg');
+  if(!bdg)return;
   if(unread){bdg.style.display='';bdg.textContent=unread>99?'99+':unread}else bdg.style.display='none';
 }
 
@@ -2166,35 +2187,8 @@ async function runOcr(file,kind){
   }
 }
 
-function processSchedule(raw){
-  if(S.settings.autoOcr){
-    const cels=parseSchedule(raw);
-    if(!cels.length){
-      notify('Não consegui identificar cultos. Revise o texto abaixo.','wn');
-      showRawReview(raw,'sch');
-      return;
-    }
-    showParsedSchedule(cels);
-    notify(`✅ ${cels.length} culto(s) identificado(s) automaticamente!`,'ok');
-  }else{
-    showRawReview(raw,'sch');
-  }
-}
-
-function processTeam(raw){
-  if(S.settings.autoOcr){
-    const members=parseTeam(raw);
-    if(!members.length){
-      notify('Não consegui identificar nomes. Revise o texto abaixo.','wn');
-      showRawReview(raw,'tm');
-      return;
-    }
-    showParsedTeam(members);
-    notify(`✅ ${members.length} discípulo(s) identificado(s)!`,'ok');
-  }else{
-    showRawReview(raw,'tm');
-  }
-}
+function processSchedule(raw){autoSaveSchedule(raw)}
+function processTeam(raw){autoSaveTeam(raw)}
 
 function showRawReview(raw,kind){
   const target=kind==='sch'?'sch-result':'tm-result';
@@ -2288,7 +2282,7 @@ function saveParsedTeam(){
     if(!m.name||m.name.length<2)return;
     const existing=S.members.find(x=>x.name.toLowerCase()===m.name.toLowerCase());
     if(existing){skip++;return}
-    S.members.push({id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:m.name,role:m.role||'Voluntário',bday:null});
+    S.members.push({id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:m.name,role:m.role||'Voluntário',bday:null,phone:null});
     added++;
   });
   save();
