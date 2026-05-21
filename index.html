@@ -586,6 +586,7 @@ input,textarea,select{-webkit-appearance:none;appearance:none;border-radius:10px
 .cent-log-ti{font-weight:600;color:var(--ink);font-size:13px}
 .cent-log-sub{font-size:11px;color:var(--ink-l);margin-top:1px}
 .cent-log-dt{font-size:11px;color:var(--ink-l);white-space:nowrap}
+.cent-dest{font-size:11px;font-weight:700;color:var(--leaf);text-transform:uppercase;letter-spacing:.8px;margin-top:8px;opacity:.8}
 /* oculta qa-wrap na Central */
 .cent-hide-qa .qa-wrap{display:none}
 </style>
@@ -977,13 +978,14 @@ function nav(id){
 
 // ─── CENTRAL ───────────────────────────────────────────────────────────────
 const CENT_ZONES=[
-  {kind:'sch',ic:'📜',ti:'Cultos & Locais',  sub:'Foto da escala com datas, horários e locais'},
-  {kind:'eq', ic:'👥',ti:'Equipes',           sub:'Foto com a equipe de cada culto'},
-  {kind:'tm', ic:'🌱',ti:'Discípulos',        sub:'Foto da lista com nomes dos membros'},
-  {kind:'ct', ic:'📞',ti:'Contatos',          sub:'Foto com nomes e telefones'},
+  {kind:'sch',ic:'📜',ti:'Cultos & Locais',  sub:'Datas, horários e locais',dest:'escalas',   destLbl:'Escalas'},
+  {kind:'eq', ic:'👥',ti:'Equipes',           sub:'Equipe de cada culto',    dest:'escalas',   destLbl:'Escalas'},
+  {kind:'tm', ic:'🌱',ti:'Discípulos',        sub:'Lista de nomes',          dest:'equipe',    destLbl:'Discípulos'},
+  {kind:'ct', ic:'📞',ti:'Contatos',          sub:'Nomes e telefones',       dest:'equipe',    destLbl:'Discípulos'},
 ];
 const CENT_LABELS={sch:'Cultos',eq:'Equipes',tm:'Discípulos',ct:'Contatos'};
 const CENT_ICS={sch:'📜',eq:'👥',tm:'🌱',ct:'📞'};
+const CENT_DEST={sch:'escalas',eq:'escalas',tm:'equipe',ct:'equipe'};
 
 function renderCentral(){
   document.getElementById('pg-acts').innerHTML='';
@@ -999,6 +1001,7 @@ function renderCentral(){
           <span class="cent-zone-ic">${z.ic}</span>
           <div class="cent-zone-ti">${z.ti}</div>
           <div class="cent-zone-sub">${z.sub}</div>
+          <div class="cent-dest">→ ${z.destLbl}</div>
           ${counts[z.kind]?`<span class="cent-bdg">${counts[z.kind]}</span>`:''}
         </div>`).join('')}
     </div>
@@ -1072,11 +1075,10 @@ function _logImport(kind,summary){
 function _doneZone(kind,msg){
   const z=document.getElementById('cz-'+kind);
   if(z)z.classList.add('done');
-  notify(msg,'ok');
-  setTimeout(()=>{
-    const sec=document.getElementById('sec-central');
-    if(sec&&sec.style.display!=='none')renderCentral();
-  },900);
+  const dest=CENT_DEST[kind];
+  const destLbl=CENT_ZONES.find(x=>x.kind===kind)?.destLbl||'';
+  notify(`${msg} Abrindo ${destLbl}...`,'ok');
+  setTimeout(()=>nav(dest||'central'),1600);
 }
 
 function _celFromParsed(c){
@@ -2293,100 +2295,158 @@ function saveParsedTeam(){
 }
 
 // ─── PARSERS ───────────────────────────────────────────────────────────────
+function _parseDate(s){
+  // dd/mm, dd/mm/aaaa, dd-mm, dd.mm
+  let m=s.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/);
+  if(m){
+    let d=parseInt(m[1]),mo=parseInt(m[2]);
+    if(mo>12&&d<=12){[d,mo]=[mo,d]}// swap if month>12
+    if(mo<1||mo>12||d<1||d>31)return null;
+    const y=m[3]?(m[3].length===2?'20'+m[3]:m[3]):today.getFullYear();
+    return`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  // "15 de junho" or "15 junho"
+  const MONTH_NAMES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  m=s.match(/(\d{1,2})\s+(?:de\s+)?([a-záàâãéêíóôõú]+)/i);
+  if(m){
+    const mi=MONTH_NAMES.findIndex(mn=>mn.startsWith(m[2].toLowerCase().substring(0,3)));
+    if(mi>=0){const d=parseInt(m[1]);if(d>=1&&d<=31)return`${today.getFullYear()}-${String(mi+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+  }
+  return null;
+}
+function _parseTime(s){
+  // 9h30, 09h30, 9H30, 09:30, 9h, 9H, 9:30
+  const m=s.match(/\b(\d{1,2})[hH:](\d{0,2})\b/);
+  if(!m)return null;
+  const h=parseInt(m[1]);if(h>23)return null;
+  return`${String(h).padStart(2,'0')}:${(m[2]||'00').padStart(2,'0')}`;
+}
+function _detectType(s){
+  const l=s.toLowerCase();
+  if(/santa ceia|comunh[aã]o/.test(l))return'Santa Ceia';
+  if(/escola|disc[ií]pulo|ensino/.test(l))return'Escola de Discípulos';
+  if(/ora[cç][aã]o/.test(l))return'Culto de Oração';
+  if(/ensaio/.test(l))return'Ensaio';
+  if(/\bfrutos\b|a[cç][aã]o\s+social/i.test(l))return'Frutos (Ação Social)';
+  if(/evento|especial/.test(l))return'Evento Especial';
+  return'Celebração';
+}
+function _isRole(s){return ROLE_KEYWORDS.some(k=>s.toLowerCase().includes(k))}
+function _mkTeamEntry(name,role){return{id:Date.now()+Math.random(),name:name.trim(),role:(role||'Voluntário').trim(),ok:false}}
+
 function parseSchedule(raw){
   const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>1);
-  const CEL_RE=[/celebra[cç][aã]o/i,/culto/i,/servi[cç]o/i,/santa ceia/i,/escola/i,/disc[ií]pulo/i,/manh[aã]/i,/noite/i,/tarde/i,/evento/i,/ensaio/i,/frutos/i];
-  const isRole=s=>ROLE_KEYWORDS.some(k=>s.toLowerCase().includes(k));
+  const CEL_RE=[/celebra[cç][aã]o/i,/culto/i,/servi[cç]o/i,/santa ceia/i,/escola/i,/disc[ií]pulo/i,/manh[aã]/i,/noite/i,/tarde/i,/evento/i,/ensaio/i,/frutos/i,/domingo/i,/s[aá]bado/i,/familia/i,/família/i];
   const isCelHdr=s=>{
     if(CEL_RE.some(r=>r.test(s)))return true;
-    const letters=s.replace(/[^A-ZÀ-Ú]/g,'');
-    return letters.length>=4&&letters===s.replace(/[^A-Za-zÀ-ú]/g,'').toUpperCase();
-  };
-  const parseDate=s=>{
-    const m=s.match(/(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/);
-    if(!m)return null;
-    const d=m[1].padStart(2,'0'),mo=m[2].padStart(2,'0');
-    const y=m[3]?(m[3].length===2?'20'+m[3]:m[3]):today.getFullYear();
-    if(parseInt(mo)>12||parseInt(d)>31)return null;
-    return`${y}-${mo}-${d}`;
-  };
-  const parseTime=s=>{
-    const m=s.match(/\b(\d{1,2})[:h](\d{0,2})\b/i);
-    if(!m)return null;
-    const h=parseInt(m[1]);if(h>23)return null;
-    return`${String(h).padStart(2,'0')}:${(m[2]||'00').padStart(2,'0')}`;
-  };
-  const detectType=s=>{
-    const l=s.toLowerCase();
-    if(/santa ceia|comunh[aã]o/.test(l))return'Santa Ceia';
-    if(/escola|disc[ií]pulo|ensino/.test(l))return'Escola de Discípulos';
-    if(/ora[cç][aã]o/.test(l))return'Culto de Oração';
-    if(/ensaio/.test(l))return'Ensaio';
-    if(/\bfrutos\b|a[cç][aã]o\s+social/i.test(l))return'Frutos (Ação Social)';
-    if(/evento|especial/.test(l))return'Evento Especial';
-    return'Celebração';
+    // all-caps word with 4+ letters
+    const words=s.split(/\s+/).filter(w=>w.length>=4);
+    return words.length>=1&&words.every(w=>/^[A-ZÀ-Ú0-9\/\-\.\(\)]+$/.test(w));
   };
   const cels=[];let cur=null,gDate=todayStr;
-  const push=()=>{if(cur&&cur.name)cels.push(cur)};
+  const push=()=>{if(cur&&cur.name&&cur.name.length>1)cels.push(cur)};
+
   for(const line of lines){
-    const dIn=parseDate(line),tIn=parseTime(line);
-    if(dIn&&!tIn)gDate=dIn;
+    const dIn=_parseDate(line),tIn=_parseTime(line);
+    // bare date line (no time) → global date context
+    if(dIn&&!tIn&&!isCelHdr(line)){gDate=dIn;continue}
+
     if(isCelHdr(line)){
+      // avoid creating a cel for a bare date header already handled
       const hasKw=CEL_RE.some(r=>r.test(line));
       if(!hasKw&&dIn&&!tIn)continue;
       push();
-      const type=detectType(line);
-      cur={name:line,type,emoji:EMOJIS[type]||'⛪',date:dIn||gDate,time:tIn||'09:30',loc:'',notes:'',team:[]};
-    }else if(cur){
+      const type=_detectType(line);
+      const cleanName=line.replace(/\d{1,2}[\/\-\.]\d{1,2}(?:[\/\-\.]\d{2,4})?/,'').replace(/\d{1,2}[hH:]\d{0,2}/,'').replace(/^\W+|\W+$/g,'').trim()||line;
+      cur={name:cleanName,type,emoji:EMOJIS[type]||'⛪',date:dIn||gDate,time:tIn||'09:30',loc:'',notes:'',team:[]};
+    } else if(cur){
       if(dIn)cur.date=dIn;
       if(tIn)cur.time=tIn;
-      const sep=line.match(/^([^:\-—|]{2,40})[:\-—|]\s*([^:\-—|]{2,40})$/);
+      // location keywords
+      if(/^(?:local|place|endere[cç]o|templo|igreja)\s*[:—\-]/i.test(line)){
+        cur.loc=line.replace(/^[^:—\-]+[:—\-]\s*/,'').trim();continue;
+      }
+      // separator: "Role: Name" or "Name: Role" or "Name — Role"
+      const sep=line.match(/^([^:\-—|]{2,45})[:\-—|]\s*([^:\-—|]{2,45})$/);
       if(sep){
         const a=sep[1].trim(),b=sep[2].trim();
-        if(!/^\d+$/.test(a)&&!/^\d+$/.test(b)&&!parseDate(a)&&!parseDate(b)){
-          const aR=isRole(a),bR=isRole(b);
-          if(aR)cur.team.push({id:Date.now()+Math.random(),name:b,role:a,ok:false});
-          else if(bR)cur.team.push({id:Date.now()+Math.random(),name:a,role:b,ok:false});
-          else if(a.length>2&&b.length>2)cur.team.push({id:Date.now()+Math.random(),name:a,role:b,ok:false});
+        if(!/^\d+$/.test(a)&&!_parseDate(a)&&a.length>1&&b.length>1){
+          if(_isRole(a))cur.team.push(_mkTeamEntry(b,a));
+          else if(_isRole(b))cur.team.push(_mkTeamEntry(a,b));
+          else cur.team.push(_mkTeamEntry(a,b));
+          continue;
         }
+      }
+      // bare name line (no separator) — add as generic volunteer
+      const clean=line.replace(/^[\d\.\)\-•·\*]+\s*/,'').trim();
+      if(clean.length>2&&/^[A-ZÀ-ú]/.test(clean)&&!/\d{2,}/.test(clean)&&clean.split(' ').length<=5&&!_parseDate(clean)){
+        cur.team.push(_mkTeamEntry(clean,'Voluntário'));
       }
     }
   }
   push();
-  // Filter false positives: empty-team all-caps lines without celebration keywords
-  const filtered=cels.filter(c=>{
-    if(c.team.length>0)return true;
-    return CEL_RE.some(r=>r.test(c.name));
-  });
-  if(filtered.length===1&&filtered[0].name.length<6)filtered[0].name='Celebração';
+  const filtered=cels.filter(c=>c.team.length>0||CEL_RE.some(r=>r.test(c.name)));
+  if(filtered.length===1&&filtered[0].name.length<5)filtered[0].name='Celebração';
   return filtered;
 }
 
 function parseTeam(raw){
-  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>1);
   const members=[],seen=new Set();
-  const SKIP=/^(nome|função|cargo|equipe|lista|ministério|total|membro|voluntário|obs|data|\d+\s*(membro|pessoa))/i;
-  const NAME_START=/^[A-ZÀ-Ú]/;
-  const MIN=/(minist[eé]rio|equipe|setor|departamento|grupo)\s*(de|do|da)?\s*(.{3,30})/i;
+  const SKIP=/^(nome|função|cargo|equipe|lista|ministério|total|membro|voluntário|obs|data|escala|turma|\d+\s*(membro|pessoa))/i;
+  const SECTION=/^(minist[eé]rio|equipe|setor|departamento|grupo|time)\s*(?:de|do|da)?\s*(.{2,40})$/i;
+  const NAME_OK=/^[A-ZÀ-úa-z]/;
   let curRole='Voluntário';
   const add=(n,r)=>{
-    n=n.trim().replace(/\s+/g,' ');r=(r||'Voluntário').trim().replace(/\s+/g,' ');
-    if(n.length<3||n.length>55||/^\d/.test(n)||seen.has(n.toLowerCase()))return false;
-    seen.add(n.toLowerCase());members.push({name:n,role:r,bday:null});return true;
+    n=n.trim().replace(/\s+/g,' ').replace(/^[^A-Za-zÀ-ú]+/,'');
+    r=(r||curRole||'Voluntário').trim().replace(/\s+/g,' ');
+    if(n.length<3||n.length>60||/^\d/.test(n)||seen.has(n.toLowerCase()))return false;
+    // skip lines that look like roles/keywords without a name
+    if(_isRole(n)&&n.split(' ').length<=2)return false;
+    seen.add(n.toLowerCase());members.push({name:n,role:r,bday:null,phone:null});return true;
   };
   for(const line of lines){
     if(SKIP.test(line)||/^\d+$/.test(line))continue;
-    const mM=line.match(MIN);
-    if(mM){curRole=line.replace(/[:\-—]/g,'').trim().substring(0,35);continue}
-    const clean=line.replace(/^[\d\.\)\-•·\*]+\s*/,'').trim();
-    if(clean.length<3)continue;
-    let m=clean.match(/^([A-ZÀ-úa-z][A-Za-zÀ-ú \.]{2,45})[:\-—|]+\s*(.{2,40})$/);
-    if(m&&!/\d{1,2}[\/\-]\d{1,2}/.test(m[2])){if(add(m[1],m[2]))continue}
-    m=clean.match(/^([A-ZÀ-ú][A-Za-zÀ-ú \.]{2,45})\s*[\(\[]\s*([A-Za-zÀ-ú \.\/]{2,35})\s*[\)\]]/);
+    if(SECTION.test(line)){curRole=line.replace(/[:\-—]/g,'').trim().substring(0,40);continue}
+    const clean=line.replace(/^[\d\.\)\-•·\*✓✗▪]+\s*/,'').trim();
+    if(clean.length<2)continue;
+    // "Name: Role" or "Name — Role" or "Name | Role"
+    let m=clean.match(/^([A-ZÀ-úa-z][A-Za-zÀ-ú \.']{2,50})[:\-—|]+\s*(.{2,50})$/);
+    if(m&&!_parseDate(m[2])&&!/\d{4,}/.test(m[2])){if(add(m[1],m[2]))continue}
+    // "Name (Role)"
+    m=clean.match(/^([A-ZÀ-ú][A-Za-zÀ-ú \.']{2,50})\s*[\(\[]\s*([A-Za-zÀ-ú \.'\/]{2,40})\s*[\)\]]/);
     if(m){if(add(m[1],m[2]))continue}
-    if(NAME_START.test(clean)&&!/\d/.test(clean)&&clean.split(' ').length<=6)add(clean,curRole);
+    // bare name line
+    if(NAME_OK.test(clean)&&!/\d{2,}/.test(clean)&&clean.split(' ').length<=6&&!_parseDate(clean))add(clean,curRole);
   }
   return members;
+}
+
+function parseContacts(raw){
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+  const contacts=[],seen=new Set();
+  // matches Brazilian mobile: (XX) 9XXXX-XXXX, XX 9XXXX-XXXX, +55 XX ..., bare 10-11 digits
+  const PHONE_RE=/(?:\+55\s*)?(?:\(?\d{2}\)?\s*)?(?:9\s?)?\d{4}[\s\-\.]?\d{4}/g;
+  const NAME_OK=/^[A-ZÀ-ú]/;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const phones=[...line.matchAll(PHONE_RE)].map(m=>m[0].replace(/\D/g,''));
+    if(!phones.length)continue;
+    const phone=phones[0];
+    if(phone.length<8||phone.length>13)continue;
+    // name: everything before the first phone in the line
+    let nameRaw=line.substring(0,line.search(PHONE_RE)).replace(/[:—\-|,;]+$/,'').trim();
+    // fallback: previous non-phone line
+    if(nameRaw.length<3&&i>0){
+      const prev=lines[i-1];
+      if(![...prev.matchAll(PHONE_RE)].length&&NAME_OK.test(prev)&&prev.length<60)nameRaw=prev.replace(/[:—\-|,;]+$/,'').trim();
+    }
+    const name=nameRaw.replace(/^[\d\.\)\-•·\*]+\s*/,'').trim();
+    if(name.length>=3&&!seen.has(name.toLowerCase())){
+      seen.add(name.toLowerCase());contacts.push({name,phone});
+    }
+  }
+  return contacts;
 }
 
 // ─── MODAL HELPERS ─────────────────────────────────────────────────────────
