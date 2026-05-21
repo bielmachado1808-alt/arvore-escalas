@@ -559,6 +559,48 @@ input,textarea,select{-webkit-appearance:none;appearance:none;border-radius:10px
 ::-webkit-scrollbar-thumb:hover{background:var(--moss-l)}
 
 .scr-y{overflow-y:auto;max-height:420px}
+
+/* ─── CENTRAL ─── */
+.cent-hero{
+  text-align:center;padding:32px 20px 24px;
+  background:linear-gradient(135deg,var(--leaf),var(--leaf-d));
+  border-radius:var(--rs);color:var(--cream);margin-bottom:24px;
+  position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(45,90,61,.25);
+}
+.cent-hero::after{content:'';position:absolute;bottom:-40%;right:-10%;width:300px;height:300px;
+  background:radial-gradient(circle,rgba(200,160,74,.2) 0,transparent 60%)}
+.cent-hero h2{font-size:28px;color:var(--cream);margin-bottom:6px;position:relative;z-index:1}
+.cent-hero p{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;opacity:.9;position:relative;z-index:1}
+.cent-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+@media(max-width:640px){.cent-grid{grid-template-columns:1fr}}
+.cent-zone{
+  border:2.5px dashed var(--moss-l);border-radius:var(--rs);padding:40px 20px;
+  text-align:center;cursor:pointer;transition:all var(--tr);
+  background:linear-gradient(135deg,var(--paper-h),var(--cream));
+  position:relative;overflow:hidden;
+}
+.cent-zone:hover{border-color:var(--leaf);background:var(--cream);transform:translateY(-3px);box-shadow:var(--sh-h)}
+.cent-zone.drag{border-color:var(--sun);background:var(--wn-l);transform:scale(1.02)}
+.cent-zone.done{border-color:var(--ok);border-style:solid;background:var(--ok-l)}
+.cent-zone-ic{font-size:52px;margin-bottom:12px;display:block}
+.cent-zone-ti{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.cent-zone-sub{font-size:13px;color:var(--ink-l);font-style:italic;line-height:1.5}
+.cent-badge{
+  position:absolute;top:12px;right:12px;background:var(--ok);color:#fff;
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+}
+.cent-log{display:flex;flex-direction:column;gap:8px}
+.cent-log-it{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:var(--paper-h);border-radius:11px;font-size:13.5px;
+  border-left:3px solid var(--leaf);transition:all var(--tr);
+}
+.cent-log-it.mbr{border-left-color:var(--moss)}
+.cent-log-em{font-size:22px;flex-shrink:0}
+.cent-log-info{flex:1;min-width:0}
+.cent-log-ti{font-weight:600;color:var(--ink)}
+.cent-log-sub{font-size:11.5px;color:var(--ink-l);margin-top:2px}
+.cent-log-dt{font-size:11px;color:var(--ink-l);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -578,7 +620,8 @@ input,textarea,select{-webkit-appearance:none;appearance:none;border-radius:10px
         <div class="brand-sub">Igreja · Olinda</div>
       </div>
     </div>
-    <div class="nav-it act" onclick="nav('dashboard')" id="nav-dashboard"><span class="nav-ic">🌿</span><span>Painel</span></div>
+    <div class="nav-it act" onclick="nav('central')" id="nav-central"><span class="nav-ic">⚡</span><span>Central</span></div>
+    <div class="nav-it" onclick="nav('dashboard')" id="nav-dashboard"><span class="nav-ic">🌿</span><span>Painel</span></div>
     <div class="nav-it" onclick="nav('escalas')" id="nav-escalas"><span class="nav-ic">📜</span><span>Escalas</span></div>
     <div class="nav-it" onclick="nav('equipe')" id="nav-equipe"><span class="nav-ic">🌱</span><span>Discípulos</span></div>
     <div class="nav-it" onclick="nav('aniversarios')" id="nav-aniversarios"><span class="nav-ic">🎂</span><span>Aniversários</span><span class="nav-bdg" id="bd-bdg" style="display:none">0</span></div>
@@ -594,8 +637,8 @@ input,textarea,select{-webkit-appearance:none;appearance:none;border-radius:10px
   <main>
     <div class="pg-hd">
       <div class="pg-ti">
-        <h1 id="pg-h">Painel</h1>
-        <div class="pg-sub" id="pg-s">Raízes profundas, frutos abundantes</div>
+        <h1 id="pg-h">Central</h1>
+        <div class="pg-sub" id="pg-s">Envie a imagem — o sistema faz o resto</div>
       </div>
       <div class="pg-acts" id="pg-acts"></div>
     </div>
@@ -609,7 +652,9 @@ input,textarea,select{-webkit-appearance:none;appearance:none;border-radius:10px
       <div class="qa-hint">🌱 Aceita data, hora, nome do culto e discípulos — tudo em uma linha · Ctrl+K</div>
     </div>
 
-    <section id="sec-dashboard"><div id="dash-body"></div></section>
+    <section id="sec-central"><div id="central-body"></div></section>
+
+    <section id="sec-dashboard" style="display:none"><div id="dash-body"></div></section>
 
     <section id="sec-escalas" style="display:none">
       <div class="tabs">
@@ -919,6 +964,7 @@ function parseQuickAdd(raw){
 
 // ─── NAVIGATION ────────────────────────────────────────────────────────────
 const PAGES={
+  central:{t:'Central',s:'Envie a imagem — o sistema faz o resto',f:renderCentral},
   dashboard:{t:'Painel',s:'Raízes profundas, frutos abundantes',f:renderDash},
   escalas:{t:'Escalas',s:'A casa do Senhor em ordem',f:renderEsc},
   equipe:{t:'Discípulos',s:'Quem caminha com a Árvore',f:renderEquipe},
@@ -937,6 +983,131 @@ function nav(id){
   document.getElementById('pg-acts').innerHTML='';
   PAGES[id].f();
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ─── CENTRAL ───────────────────────────────────────────────────────────────
+function renderCentral(){
+  document.getElementById('pg-acts').innerHTML='';
+  const log=(S.importLog||[]).slice().reverse().slice(0,12);
+  const schCount=S.celebrations.filter(c=>daysUntil(c.date)>=0).length;
+  const mbrCount=S.members.length;
+  document.getElementById('central-body').innerHTML=`
+    <div class="cent-hero">
+      <h2>⚡ Central de Importação</h2>
+      <p>Envie a foto — o sistema lê, interpreta e salva tudo automaticamente</p>
+    </div>
+    <div class="cent-grid">
+      <div class="cent-zone" id="cz-sch"
+        ondragover="onDrag(event,'cz-sch')" ondragleave="offDrag(event,'cz-sch')" ondrop="onDropCentral(event,'sch')"
+        onclick="document.getElementById('cinp-sch').click()">
+        <span class="cent-zone-ic">📜</span>
+        <div class="cent-zone-ti">Escala</div>
+        <div class="cent-zone-sub">Foto da escala semanal ou mensal<br>Arraste ou toque para escolher</div>
+        ${schCount?`<span class="cent-badge">${schCount} culto(s)</span>`:''}
+      </div>
+      <div class="cent-zone" id="cz-tm"
+        ondragover="onDrag(event,'cz-tm')" ondragleave="offDrag(event,'cz-tm')" ondrop="onDropCentral(event,'tm')"
+        onclick="document.getElementById('cinp-tm').click()">
+        <span class="cent-zone-ic">🌱</span>
+        <div class="cent-zone-ti">Discípulos</div>
+        <div class="cent-zone-sub">Lista de membros ou voluntários<br>Arraste ou toque para escolher</div>
+        ${mbrCount?`<span class="cent-badge">${mbrCount} membro(s)</span>`:''}
+      </div>
+    </div>
+    <input type="file" id="cinp-sch" accept="image/*" hidden onchange="onFileCentral(event,'sch')">
+    <input type="file" id="cinp-tm"  accept="image/*" hidden onchange="onFileCentral(event,'tm')">
+    <div class="card">
+      <div class="card-ti"><h3>📋 Importações recentes</h3></div>
+      ${log.length?`<div class="cent-log">${log.map(l=>`
+        <div class="cent-log-it ${l.kind==='tm'?'mbr':''}">
+          <span class="cent-log-em">${l.kind==='sch'?'📜':'🌱'}</span>
+          <div class="cent-log-info">
+            <div class="cent-log-ti">${escHtml(l.summary)}</div>
+            <div class="cent-log-sub">${l.kind==='sch'?'Escala':'Discípulos'}</div>
+          </div>
+          <span class="cent-log-dt">${fmtDate(l.date)}</span>
+        </div>`).join('')}</div>`
+      :`<div class="empty"><div class="e-ic" style="font-size:40px">📂</div><p>Nenhuma importação ainda. Envie a primeira imagem acima.</p></div>`}
+    </div>
+  `;
+}
+
+function onDropCentral(e,kind){
+  e.preventDefault();
+  const zid=kind==='sch'?'cz-sch':'cz-tm';
+  document.getElementById(zid).classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/'))runOcrCentral(f,kind);
+}
+function onFileCentral(e,kind){const f=e.target.files[0];if(f)runOcrCentral(f,kind)}
+
+async function runOcrCentral(file,kind){
+  const ov=document.getElementById('ocr-ov');
+  ov.classList.add('show');
+  const upd=(msg,pct)=>{
+    document.getElementById('ocr-stat').textContent=msg;
+    document.getElementById('ocr-bf').style.width=pct+'%';
+    document.getElementById('ocr-pct').textContent=Math.round(pct)+'%';
+  };
+  upd('Carregando motor OCR...',5);
+  try{
+    const worker=await Tesseract.createWorker('por',1,{
+      logger:m=>{
+        if(m.status==='loading tesseract core')upd('Carregando OCR...',15);
+        else if(m.status==='loading language traineddata')upd('Carregando português...',30);
+        else if(m.status==='initializing api')upd('Iniciando análise...',45);
+        else if(m.status==='recognizing text')upd('Lendo texto... '+Math.round(m.progress*100)+'%',45+m.progress*50);
+      }
+    });
+    upd('Processando...',95);
+    const{data:{text}}=await worker.recognize(file);
+    await worker.terminate();
+    upd('Concluído!',100);
+    await new Promise(r=>setTimeout(r,300));
+    ov.classList.remove('show');
+    if(!text.trim()){notify('Não consegui ler texto nesta imagem.','er');return}
+    if(kind==='sch')autoSaveSchedule(text);
+    else autoSaveTeam(text);
+  }catch(err){
+    ov.classList.remove('show');
+    notify('❌ Erro no OCR. Tente imagem mais nítida.','er');
+  }
+}
+
+function autoSaveSchedule(raw){
+  const cels=parseSchedule(raw);
+  if(!cels.length){notify('Não identifiquei cultos na imagem. Verifique se a foto está nítida.','wn');return}
+  let n=0;
+  cels.forEach(c=>{
+    S.celebrations.push({...c,id:'cel-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),checklist:[]});
+    c.team.forEach(t=>autoAddMember(t.name,t.role));
+    n++;
+  });
+  S.importLog=S.importLog||[];
+  S.importLog.push({kind:'sch',summary:`${n} culto(s) importado(s)${cels[0]?` — "${cels[0].name}"${n>1?' e mais':''}`:''}`,date:todayStr,ts:Date.now()});
+  save();
+  document.getElementById('cz-sch').classList.add('done');
+  notify(`✅ ${n} culto(s) salvos automaticamente!`,'ok');
+  setTimeout(()=>renderCentral(),800);
+}
+
+function autoSaveTeam(raw){
+  const members=parseTeam(raw);
+  if(!members.length){notify('Não identifiquei nomes na imagem. Verifique se a foto está nítida.','wn');return}
+  let added=0,skip=0;
+  members.forEach(m=>{
+    if(!m.name||m.name.length<2)return;
+    const ex=S.members.find(x=>x.name.toLowerCase()===m.name.toLowerCase());
+    if(ex){skip++;return}
+    S.members.push({id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:m.name,role:m.role||'Voluntário',bday:null,phone:null});
+    added++;
+  });
+  S.importLog=S.importLog||[];
+  S.importLog.push({kind:'tm',summary:`${added} discípulo(s) adicionado(s)${skip?` (${skip} já existia${skip>1?'m':''})`:''}`,date:todayStr,ts:Date.now()});
+  save();
+  document.getElementById('cz-tm').classList.add('done');
+  notify(`✅ ${added} discípulo(s) salvos automaticamente!`,'ok');
+  setTimeout(()=>renderCentral(),800);
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────────────────────
@@ -2189,8 +2360,9 @@ function notify(msg,type='info'){
 
 // ─── INIT ──────────────────────────────────────────────────────────────────
 load();
+S.importLog=S.importLog||[];
 runAutomations();
-renderDash();
+nav('central');
 updateMsgBadge();
 updateBdayBadge();
 
@@ -2246,4 +2418,3 @@ if(isIOS&&!isStandalone&&!localStorage.getItem('arvore_iosHint')){
 </script>
 </body>
 </html>
-
