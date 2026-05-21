@@ -561,46 +561,33 @@ input,textarea,select{-webkit-appearance:none;appearance:none;border-radius:10px
 .scr-y{overflow-y:auto;max-height:420px}
 
 /* ─── CENTRAL ─── */
-.cent-hero{
-  text-align:center;padding:32px 20px 24px;
-  background:linear-gradient(135deg,var(--leaf),var(--leaf-d));
-  border-radius:var(--rs);color:var(--cream);margin-bottom:24px;
-  position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(45,90,61,.25);
-}
-.cent-hero::after{content:'';position:absolute;bottom:-40%;right:-10%;width:300px;height:300px;
-  background:radial-gradient(circle,rgba(200,160,74,.2) 0,transparent 60%)}
-.cent-hero h2{font-size:28px;color:var(--cream);margin-bottom:6px;position:relative;z-index:1}
-.cent-hero p{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;opacity:.9;position:relative;z-index:1}
-.cent-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
-@media(max-width:640px){.cent-grid{grid-template-columns:1fr}}
+.cent-zones{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+@media(max-width:500px){.cent-zones{grid-template-columns:1fr}}
 .cent-zone{
-  border:2.5px dashed var(--moss-l);border-radius:var(--rs);padding:40px 20px;
+  border:2px dashed var(--moss-l);border-radius:var(--rs);padding:28px 16px 22px;
   text-align:center;cursor:pointer;transition:all var(--tr);
-  background:linear-gradient(135deg,var(--paper-h),var(--cream));
-  position:relative;overflow:hidden;
+  background:var(--cream);position:relative;overflow:hidden;min-height:160px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
-.cent-zone:hover{border-color:var(--leaf);background:var(--cream);transform:translateY(-3px);box-shadow:var(--sh-h)}
-.cent-zone.drag{border-color:var(--sun);background:var(--wn-l);transform:scale(1.02)}
-.cent-zone.done{border-color:var(--ok);border-style:solid;background:var(--ok-l)}
-.cent-zone-ic{font-size:52px;margin-bottom:12px;display:block}
-.cent-zone-ti{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px}
-.cent-zone-sub{font-size:13px;color:var(--ink-l);font-style:italic;line-height:1.5}
-.cent-badge{
-  position:absolute;top:12px;right:12px;background:var(--ok);color:#fff;
-  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
-}
-.cent-log{display:flex;flex-direction:column;gap:8px}
-.cent-log-it{
-  display:flex;align-items:center;gap:12px;padding:12px 16px;
-  background:var(--paper-h);border-radius:11px;font-size:13.5px;
-  border-left:3px solid var(--leaf);transition:all var(--tr);
-}
-.cent-log-it.mbr{border-left-color:var(--moss)}
-.cent-log-em{font-size:22px;flex-shrink:0}
+.cent-zone:hover{border-color:var(--leaf);transform:translateY(-3px);box-shadow:var(--sh-h)}
+.cent-zone:active{transform:scale(.97)}
+.cent-zone.drag{border-color:var(--sun);background:var(--wn-l)}
+.cent-zone.done{border-color:var(--ok);border-style:solid;border-width:2.5px;background:var(--ok-l)}
+.cent-zone.done .cent-zone-ic::after{content:'✓';position:absolute;top:8px;left:8px;width:22px;height:22px;background:var(--ok);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.cent-zone-ic{font-size:44px;margin-bottom:10px;display:block;position:relative}
+.cent-zone-ti{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.cent-zone-sub{font-size:11.5px;color:var(--ink-l);line-height:1.45;max-width:180px}
+.cent-bdg{position:absolute;top:10px;right:10px;background:var(--leaf);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.cent-log{display:flex;flex-direction:column;gap:7px}
+.cent-log-it{display:flex;align-items:center;gap:11px;padding:11px 14px;background:var(--paper-h);border-radius:10px;font-size:13px;border-left:3px solid var(--leaf)}
+.cent-log-it.ct{border-left-color:var(--info)}.cent-log-it.tm{border-left-color:var(--moss)}.cent-log-it.eq{border-left-color:var(--sun-d)}
+.cent-log-em{font-size:20px;flex-shrink:0}
 .cent-log-info{flex:1;min-width:0}
-.cent-log-ti{font-weight:600;color:var(--ink)}
-.cent-log-sub{font-size:11.5px;color:var(--ink-l);margin-top:2px}
+.cent-log-ti{font-weight:600;color:var(--ink);font-size:13px}
+.cent-log-sub{font-size:11px;color:var(--ink-l);margin-top:1px}
 .cent-log-dt{font-size:11px;color:var(--ink-l);white-space:nowrap}
+/* oculta qa-wrap na Central */
+.cent-hide-qa .qa-wrap{display:none}
 </style>
 </head>
 <body>
@@ -981,65 +968,66 @@ function nav(id){
   document.getElementById('pg-h').textContent=PAGES[id].t;
   document.getElementById('pg-s').textContent=PAGES[id].s;
   document.getElementById('pg-acts').innerHTML='';
+  const main=document.querySelector('main');
+  if(id==='central')main.classList.add('cent-hide-qa');
+  else main.classList.remove('cent-hide-qa');
   PAGES[id].f();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ─── CENTRAL ───────────────────────────────────────────────────────────────
+const CENT_ZONES=[
+  {kind:'sch',ic:'📜',ti:'Cultos & Locais',  sub:'Foto da escala com datas, horários e locais'},
+  {kind:'eq', ic:'👥',ti:'Equipes',           sub:'Foto com a equipe de cada culto'},
+  {kind:'tm', ic:'🌱',ti:'Discípulos',        sub:'Foto da lista com nomes dos membros'},
+  {kind:'ct', ic:'📞',ti:'Contatos',          sub:'Foto com nomes e telefones'},
+];
+const CENT_LABELS={sch:'Cultos',eq:'Equipes',tm:'Discípulos',ct:'Contatos'};
+const CENT_ICS={sch:'📜',eq:'👥',tm:'🌱',ct:'📞'};
+
 function renderCentral(){
   document.getElementById('pg-acts').innerHTML='';
-  const log=(S.importLog||[]).slice().reverse().slice(0,12);
-  const schCount=S.celebrations.filter(c=>daysUntil(c.date)>=0).length;
-  const mbrCount=S.members.length;
+  document.querySelector('main').classList.add('cent-hide-qa');
+  const log=(S.importLog||[]).slice().reverse().slice(0,10);
+  const counts={sch:S.celebrations.filter(c=>daysUntil(c.date)>=0).length,tm:S.members.length,eq:0,ct:S.members.filter(m=>m.phone).length};
   document.getElementById('central-body').innerHTML=`
-    <div class="cent-hero">
-      <h2>⚡ Central de Importação</h2>
-      <p>Envie a foto — o sistema lê, interpreta e salva tudo automaticamente</p>
+    <div class="cent-zones">
+      ${CENT_ZONES.map(z=>`
+        <div class="cent-zone" id="cz-${z.kind}"
+          ondragover="onDrag(event,'cz-${z.kind}')" ondragleave="offDrag(event,'cz-${z.kind}')" ondrop="onDropCentral(event,'${z.kind}')"
+          onclick="document.getElementById('cinp-${z.kind}').click()">
+          <span class="cent-zone-ic">${z.ic}</span>
+          <div class="cent-zone-ti">${z.ti}</div>
+          <div class="cent-zone-sub">${z.sub}</div>
+          ${counts[z.kind]?`<span class="cent-bdg">${counts[z.kind]}</span>`:''}
+        </div>`).join('')}
     </div>
-    <div class="cent-grid">
-      <div class="cent-zone" id="cz-sch"
-        ondragover="onDrag(event,'cz-sch')" ondragleave="offDrag(event,'cz-sch')" ondrop="onDropCentral(event,'sch')"
-        onclick="document.getElementById('cinp-sch').click()">
-        <span class="cent-zone-ic">📜</span>
-        <div class="cent-zone-ti">Escala</div>
-        <div class="cent-zone-sub">Foto da escala semanal ou mensal<br>Arraste ou toque para escolher</div>
-        ${schCount?`<span class="cent-badge">${schCount} culto(s)</span>`:''}
-      </div>
-      <div class="cent-zone" id="cz-tm"
-        ondragover="onDrag(event,'cz-tm')" ondragleave="offDrag(event,'cz-tm')" ondrop="onDropCentral(event,'tm')"
-        onclick="document.getElementById('cinp-tm').click()">
-        <span class="cent-zone-ic">🌱</span>
-        <div class="cent-zone-ti">Discípulos</div>
-        <div class="cent-zone-sub">Lista de membros ou voluntários<br>Arraste ou toque para escolher</div>
-        ${mbrCount?`<span class="cent-badge">${mbrCount} membro(s)</span>`:''}
-      </div>
-    </div>
-    <input type="file" id="cinp-sch" accept="image/*" hidden onchange="onFileCentral(event,'sch')">
-    <input type="file" id="cinp-tm"  accept="image/*" hidden onchange="onFileCentral(event,'tm')">
-    <div class="card">
-      <div class="card-ti"><h3>📋 Importações recentes</h3></div>
-      ${log.length?`<div class="cent-log">${log.map(l=>`
-        <div class="cent-log-it ${l.kind==='tm'?'mbr':''}">
-          <span class="cent-log-em">${l.kind==='sch'?'📜':'🌱'}</span>
-          <div class="cent-log-info">
-            <div class="cent-log-ti">${escHtml(l.summary)}</div>
-            <div class="cent-log-sub">${l.kind==='sch'?'Escala':'Discípulos'}</div>
-          </div>
+    <input type="file" id="cinp-sch" accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'sch')">
+    <input type="file" id="cinp-eq"  accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'eq')">
+    <input type="file" id="cinp-tm"  accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'tm')">
+    <input type="file" id="cinp-ct"  accept="image/*" capture="environment" hidden onchange="onFileCentral(event,'ct')">
+    ${log.length?`<div class="card"><div class="card-ti"><h3 style="font-size:15px;color:var(--ink-m)">📋 Importações recentes</h3></div>
+      <div class="cent-log">${log.map(l=>`
+        <div class="cent-log-it ${l.kind}">
+          <span class="cent-log-em">${CENT_ICS[l.kind]||'📋'}</span>
+          <div class="cent-log-info"><div class="cent-log-ti">${escHtml(l.summary)}</div>
+          <div class="cent-log-sub">${CENT_LABELS[l.kind]||''}</div></div>
           <span class="cent-log-dt">${fmtDate(l.date)}</span>
-        </div>`).join('')}</div>`
-      :`<div class="empty"><div class="e-ic" style="font-size:40px">📂</div><p>Nenhuma importação ainda. Envie a primeira imagem acima.</p></div>`}
-    </div>
+        </div>`).join('')}
+      </div></div>`:''}
   `;
 }
 
 function onDropCentral(e,kind){
   e.preventDefault();
-  const zid=kind==='sch'?'cz-sch':'cz-tm';
-  document.getElementById(zid).classList.remove('drag');
+  document.getElementById('cz-'+kind).classList.remove('drag');
   const f=e.dataTransfer.files[0];
   if(f&&f.type.startsWith('image/'))runOcrCentral(f,kind);
 }
-function onFileCentral(e,kind){const f=e.target.files[0];if(f)runOcrCentral(f,kind)}
+function onFileCentral(e,kind){
+  const f=e.target.files[0];if(f)runOcrCentral(f,kind);
+  e.target.value='';
+}
 
 async function runOcrCentral(file,kind){
   const ov=document.getElementById('ocr-ov');
@@ -1049,65 +1037,130 @@ async function runOcrCentral(file,kind){
     document.getElementById('ocr-bf').style.width=pct+'%';
     document.getElementById('ocr-pct').textContent=Math.round(pct)+'%';
   };
-  upd('Carregando motor OCR...',5);
+  upd('Lendo imagem...',5);
   try{
     const worker=await Tesseract.createWorker('por',1,{
       logger:m=>{
         if(m.status==='loading tesseract core')upd('Carregando OCR...',15);
         else if(m.status==='loading language traineddata')upd('Carregando português...',30);
-        else if(m.status==='initializing api')upd('Iniciando análise...',45);
-        else if(m.status==='recognizing text')upd('Lendo texto... '+Math.round(m.progress*100)+'%',45+m.progress*50);
+        else if(m.status==='initializing api')upd('Preparando...',45);
+        else if(m.status==='recognizing text')upd('Lendo texto...',45+m.progress*50);
       }
     });
-    upd('Processando...',95);
+    upd('Processando...',96);
     const{data:{text}}=await worker.recognize(file);
     await worker.terminate();
     upd('Concluído!',100);
-    await new Promise(r=>setTimeout(r,300));
+    await new Promise(r=>setTimeout(r,280));
     ov.classList.remove('show');
-    if(!text.trim()){notify('Não consegui ler texto nesta imagem.','er');return}
+    if(!text.trim()){notify('Não consegui ler texto. Tente foto mais nítida.','er');return}
     if(kind==='sch')autoSaveSchedule(text);
-    else autoSaveTeam(text);
+    else if(kind==='eq')autoSaveEquipes(text);
+    else if(kind==='tm')autoSaveTeam(text);
+    else if(kind==='ct')autoSaveContacts(text);
   }catch(err){
     ov.classList.remove('show');
-    notify('❌ Erro no OCR. Tente imagem mais nítida.','er');
+    notify('❌ Erro ao ler imagem. Tente novamente.','er');
   }
+}
+
+function _logImport(kind,summary){
+  S.importLog=S.importLog||[];
+  S.importLog.push({kind,summary,date:todayStr,ts:Date.now()});
+  if(S.importLog.length>50)S.importLog=S.importLog.slice(-50);
+}
+function _doneZone(kind,msg){
+  const z=document.getElementById('cz-'+kind);
+  if(z)z.classList.add('done');
+  notify(msg,'ok');
+  setTimeout(()=>renderCentral(),900);
 }
 
 function autoSaveSchedule(raw){
   const cels=parseSchedule(raw);
-  if(!cels.length){notify('Não identifiquei cultos na imagem. Verifique se a foto está nítida.','wn');return}
+  if(!cels.length){notify('Nenhum culto identificado. Tente foto mais nítida.','wn');return}
   let n=0;
   cels.forEach(c=>{
     S.celebrations.push({...c,id:'cel-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),checklist:[]});
-    c.team.forEach(t=>autoAddMember(t.name,t.role));
-    n++;
+    c.team.forEach(t=>autoAddMember(t.name,t.role));n++;
   });
-  S.importLog=S.importLog||[];
-  S.importLog.push({kind:'sch',summary:`${n} culto(s) importado(s)${cels[0]?` — "${cels[0].name}"${n>1?' e mais':''}`:''}`,date:todayStr,ts:Date.now()});
-  save();
-  document.getElementById('cz-sch').classList.add('done');
-  notify(`✅ ${n} culto(s) salvos automaticamente!`,'ok');
-  setTimeout(()=>renderCentral(),800);
+  _logImport('sch',`${n} culto(s) — "${cels[0].name}"${n>1?' e mais':''}`);
+  save();_doneZone('sch',`✅ ${n} culto(s) salvos!`);
+}
+
+function autoSaveEquipes(raw){
+  const cels=parseSchedule(raw);
+  if(!cels.length){notify('Nenhuma equipe identificada. Tente foto mais nítida.','wn');return}
+  let merged=0,created=0;
+  cels.forEach(c=>{
+    if(!c.team.length)return;
+    const ex=S.celebrations.find(x=>x.date===c.date&&(
+      x.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])||
+      c.name.toLowerCase().includes(x.name.toLowerCase().split(' ')[0])
+    ));
+    if(ex){
+      c.team.forEach(t=>{
+        if(!ex.team.find(et=>et.name.toLowerCase()===t.name.toLowerCase()))ex.team.push(t);
+        autoAddMember(t.name,t.role);
+      });merged++;
+    }else{
+      S.celebrations.push({...c,id:'cel-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),checklist:[]});
+      c.team.forEach(t=>autoAddMember(t.name,t.role));created++;
+    }
+  });
+  const tot=merged+created;
+  _logImport('eq',`${merged} culto(s) atualizado(s)${created?` + ${created} criado(s)`:''}`);
+  save();_doneZone('eq',`✅ Equipes salvas em ${tot} culto(s)!`);
 }
 
 function autoSaveTeam(raw){
   const members=parseTeam(raw);
-  if(!members.length){notify('Não identifiquei nomes na imagem. Verifique se a foto está nítida.','wn');return}
+  if(!members.length){notify('Nenhum nome identificado. Tente foto mais nítida.','wn');return}
   let added=0,skip=0;
   members.forEach(m=>{
     if(!m.name||m.name.length<2)return;
-    const ex=S.members.find(x=>x.name.toLowerCase()===m.name.toLowerCase());
-    if(ex){skip++;return}
+    if(S.members.find(x=>x.name.toLowerCase()===m.name.toLowerCase())){skip++;return}
     S.members.push({id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:m.name,role:m.role||'Voluntário',bday:null,phone:null});
     added++;
   });
-  S.importLog=S.importLog||[];
-  S.importLog.push({kind:'tm',summary:`${added} discípulo(s) adicionado(s)${skip?` (${skip} já existia${skip>1?'m':''})`:''}`,date:todayStr,ts:Date.now()});
-  save();
-  document.getElementById('cz-tm').classList.add('done');
-  notify(`✅ ${added} discípulo(s) salvos automaticamente!`,'ok');
-  setTimeout(()=>renderCentral(),800);
+  _logImport('tm',`${added} discípulo(s) adicionado(s)${skip?` (${skip} já existia${skip>1?'m':''})`:''}`);
+  save();_doneZone('tm',`✅ ${added} discípulo(s) salvos!`);
+}
+
+function autoSaveContacts(raw){
+  const contacts=parseContacts(raw);
+  if(!contacts.length){notify('Nenhum contato identificado. Tente foto mais nítida.','wn');return}
+  let updated=0,added=0;
+  contacts.forEach(c=>{
+    const ex=S.members.find(m=>{
+      const mn=m.name.toLowerCase(),cn=c.name.toLowerCase();
+      return mn===cn||mn.split(' ')[0]===cn.split(' ')[0];
+    });
+    if(ex){ex.phone=c.phone;updated++;}
+    else{S.members.push({id:'mbr-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:c.name,role:'Voluntário',bday:null,phone:c.phone});added++;}
+  });
+  _logImport('ct',`${updated} contato(s) atualizado(s)${added?` + ${added} novo(s)`:''}`);
+  save();_doneZone('ct',`✅ ${updated+added} contato(s) salvos!`);
+}
+
+function parseContacts(raw){
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+  const contacts=[],seen=new Set();
+  const PHONE_RE=/(\(?\d{2}\)?\s*9?\d{4}[\s\-\.]?\d{4})/;
+  const NAME_OK=/^[A-ZÀ-ú]/;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const pm=line.match(PHONE_RE);if(!pm)continue;
+    const phone=pm[0].replace(/\D/g,'');
+    if(phone.length<8||phone.length>13)continue;
+    let name=line.substring(0,line.indexOf(pm[0])).replace(/[:—\-|]/g,'').trim();
+    if(name.length<3&&i>0){
+      const prev=lines[i-1];
+      if(!prev.match(PHONE_RE)&&NAME_OK.test(prev)&&prev.length<55)name=prev.replace(/[:—\-|]/g,'').trim();
+    }
+    if(name.length>=3&&!seen.has(name.toLowerCase())){seen.add(name.toLowerCase());contacts.push({name,phone});}
+  }
+  return contacts;
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────────────────────
